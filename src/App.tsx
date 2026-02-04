@@ -8,8 +8,12 @@ import { FollowUpManagement } from './components/FollowUpManagement';
 import { SummaryDashboard } from './components/SummaryDashboard';
 import { ContactManagement } from './components/ContactManagement';
 import { Statistics } from './components/Statistics';
+import { ConfigCheck } from './components/ConfigCheck';
 
 function App() {
+  const configError = ConfigCheck();
+  if (configError) return configError;
+
   const [activeTab, setActiveTab] = useState('registrations');
 
   const tabs = [
