@@ -1,16 +1,27 @@
 import { useState, useEffect } from 'react';
-import { Users, CheckCircle, UserCheck, Filter } from 'lucide-react';
+import { Users, CheckCircle, UserCheck, Filter, ChevronDown, ChevronRight, Heart, ListChecks } from 'lucide-react';
 import { supabase, Event, EventDate } from '../lib/supabase';
+
+type FollowUpBreakdown = {
+  '待跟進-慕道階段': number;
+  '待跟進-需要個人關懷': number;
+  '待跟進- 可繼續邀請參加聚會': number;
+  '待跟進-可邀約個人佈道或探訪': number;
+  '待確定跟進日期': number;
+  '已完成跟進行動': number;
+};
 
 type EventSummary = {
   event: Event;
   eventDate: EventDate;
-  totalRegistrations: number;
   attendees: number;
   helpers: number;
   attended: number;
-  nonBelievers: number;
+  totalAttended: number;
+  decisionCount: number;
   followUpPending: number;
+  followUpBreakdown?: FollowUpBreakdown;
+  isExpanded: boolean;
 };
 
 type AggregatedStats = {
@@ -18,7 +29,7 @@ type AggregatedStats = {
   uniqueAttendees: number;
   uniqueHelpers: number;
   uniqueAttended: number;
-  uniqueNonBelievers: number;
+  totalDecisions: number;
   totalFollowUpPending: number;
 };
 
@@ -80,16 +91,25 @@ export function SummaryDashboard() {
           return r.role === 'helper' && attendance?.attended === true;
         });
 
-        const attendedTotal = dateRegistrations.filter(r => {
-          const attendance = attendanceData?.find(a => a.registration_id === r.id);
-          return attendance?.attended === true;
+        const totalAttended = attendedAttendees.length + attendedHelpers.length;
+
+        const dateString = new Date(eventDate.event_date).toLocaleDateString('en-US', {
+          month: 'numeric',
+          day: 'numeric'
         });
 
-        const attendedNonBelievers = dateRegistrations.filter(r => {
-          const contact = contactsData?.find(c => c.id === r.contact_id);
-          const attendance = attendanceData?.find(a => a.registration_id === r.id);
-          return contact?.is_believer === false && r.role === 'attendee' && attendance?.attended === true;
-        });
+        const attendedContactIds = dateRegistrations
+          .filter(r => {
+            const attendance = attendanceData?.find(a => a.registration_id === r.id);
+            return attendance?.attended === true;
+          })
+          .map(r => r.contact_id);
+
+        const decisionCount = contactsData?.filter(c =>
+          attendedContactIds.includes(c.id) &&
+          c.faith_status?.includes('決志') &&
+          c.faith_status?.includes(dateString)
+        ).length || 0;
 
         const followUpPending = followUpsData?.filter(f =>
           f.status === '待跟進' &&
@@ -99,12 +119,13 @@ export function SummaryDashboard() {
         summaryData.push({
           event,
           eventDate,
-          totalRegistrations: dateRegistrations.length,
           attendees: attendees.length,
           helpers: attendedHelpers.length,
           attended: attendedAttendees.length,
-          nonBelievers: attendedNonBelievers.length,
-          followUpPending
+          totalAttended,
+          decisionCount,
+          followUpPending,
+          isExpanded: false
         });
       }
 
@@ -116,6 +137,68 @@ export function SummaryDashboard() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadFollowUpBreakdown(eventDateId: string): Promise<FollowUpBreakdown> {
+    try {
+      const { data: registrationsData } = await supabase
+        .from('registrations')
+        .select('contact_id')
+        .eq('event_date_id', eventDateId);
+
+      const { data: attendanceData } = await supabase
+        .from('attendance')
+        .select('registration_id')
+        .eq('attended', true);
+
+      const attendedContactIds = registrationsData
+        ?.filter(r => attendanceData?.some(a => a.registration_id === r.id))
+        .map(r => r.contact_id) || [];
+
+      const { data: followUpsData } = await supabase
+        .from('follow_ups')
+        .select('status, contact_id')
+        .in('contact_id', attendedContactIds);
+
+      const breakdown: FollowUpBreakdown = {
+        '待跟進-慕道階段': 0,
+        '待跟進-需要個人關懷': 0,
+        '待跟進- 可繼續邀請參加聚會': 0,
+        '待跟進-可邀約個人佈道或探訪': 0,
+        '待確定跟進日期': 0,
+        '已完成跟進行動': 0
+      };
+
+      followUpsData?.forEach(f => {
+        if (f.status in breakdown) {
+          breakdown[f.status as keyof FollowUpBreakdown]++;
+        }
+      });
+
+      return breakdown;
+    } catch (error) {
+      console.error('載入跟進分解資料失敗:', error);
+      return {
+        '待跟進-慕道階段': 0,
+        '待跟進-需要個人關懷': 0,
+        '待跟進- 可繼續邀請參加聚會': 0,
+        '待跟進-可邀約個人佈道或探訪': 0,
+        '待確定跟進日期': 0,
+        '已完成跟進行動': 0
+      };
+    }
+  }
+
+  async function toggleRowExpansion(index: number) {
+    const updatedSummaries = [...summaries];
+    const summary = updatedSummaries[index];
+
+    if (!summary.isExpanded && !summary.followUpBreakdown) {
+      summary.followUpBreakdown = await loadFollowUpBreakdown(summary.eventDate.id);
+    }
+
+    summary.isExpanded = !summary.isExpanded;
+    setSummaries(updatedSummaries);
   }
 
   const selectedEvent = filterEvent !== 'all' ? events.find(e => e.id === filterEvent) : null;
@@ -163,15 +246,7 @@ export function SummaryDashboard() {
         .map(r => r.contact_id)
     );
 
-    const uniqueNonBelieverIds = new Set(
-      relevantRegs
-        .filter(r => {
-          const contact = contactsData?.find(c => c.id === r.contact_id);
-          const attendance = attendanceData?.find(a => a.registration_id === r.id);
-          return contact?.is_believer === false && r.role === 'attendee' && attendance?.attended === true;
-        })
-        .map(r => r.contact_id)
-    );
+    const totalDecisions = filteredSummaries.reduce((sum, s) => sum + s.decisionCount, 0);
 
     const totalFollowUpPending = followUpsData?.filter(f =>
       f.status === '待跟進' &&
@@ -183,7 +258,7 @@ export function SummaryDashboard() {
       uniqueAttendees: uniqueAttendeeIds.size,
       uniqueHelpers: uniqueHelperIds.size,
       uniqueAttended: uniqueAttendedIds.size,
-      uniqueNonBelievers: uniqueNonBelieverIds.size,
+      totalDecisions,
       totalFollowUpPending
     };
   }
@@ -193,7 +268,7 @@ export function SummaryDashboard() {
     uniqueAttendees: 0,
     uniqueHelpers: 0,
     uniqueAttended: 0,
-    uniqueNonBelievers: 0,
+    totalDecisions: 0,
     totalFollowUpPending: 0
   });
 
@@ -204,18 +279,18 @@ export function SummaryDashboard() {
   }, [filteredSummaries.length, loading]);
 
   const totalStats = filteredSummaries.reduce((acc, s) => ({
-    totalRegistrations: acc.totalRegistrations + s.totalRegistrations,
     totalAttendees: acc.totalAttendees + s.attendees,
     totalHelpers: acc.totalHelpers + s.helpers,
     totalAttended: acc.totalAttended + s.attended,
-    totalNonBelievers: acc.totalNonBelievers + s.nonBelievers,
+    totalAttendedBoth: acc.totalAttendedBoth + s.totalAttended,
+    totalDecisions: acc.totalDecisions + s.decisionCount,
     totalFollowUpPending: acc.totalFollowUpPending + s.followUpPending
   }), {
-    totalRegistrations: 0,
     totalAttendees: 0,
     totalHelpers: 0,
     totalAttended: 0,
-    totalNonBelievers: 0,
+    totalAttendedBoth: 0,
+    totalDecisions: 0,
     totalFollowUpPending: 0
   });
 
@@ -311,10 +386,10 @@ export function SummaryDashboard() {
 
             <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg p-6 shadow-lg">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium opacity-90">未信者出席人數</h3>
-                <UserCheck className="w-6 h-6 opacity-75" />
+                <h3 className="text-sm font-medium opacity-90">決志人數</h3>
+                <Heart className="w-6 h-6 opacity-75" />
               </div>
-              <p className="text-3xl font-bold">{aggregatedStats.uniqueNonBelievers}</p>
+              <p className="text-3xl font-bold">{aggregatedStats.totalDecisions}</p>
               <p className="text-xs opacity-75 mt-1">
                 待跟進: {aggregatedStats.totalFollowUpPending}
               </p>
@@ -356,10 +431,10 @@ export function SummaryDashboard() {
 
           <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg p-6 shadow-lg">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium opacity-90">未信者人次</h3>
-              <UserCheck className="w-6 h-6 opacity-75" />
+              <h3 className="text-sm font-medium opacity-90">決志人次</h3>
+              <Heart className="w-6 h-6 opacity-75" />
             </div>
-            <p className="text-3xl font-bold">{totalStats.totalNonBelievers}</p>
+            <p className="text-3xl font-bold">{totalStats.totalDecisions}</p>
             <p className="text-xs opacity-75 mt-1">
               待跟進: {totalStats.totalFollowUpPending}
             </p>
@@ -375,14 +450,14 @@ export function SummaryDashboard() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   活動名稱
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   日期
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  總登記
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   參加者登記
@@ -397,7 +472,10 @@ export function SummaryDashboard() {
                   協助者出席
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  未信者出席
+                  總出席人數
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  決志人數
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   待跟進
@@ -411,41 +489,110 @@ export function SummaryDashboard() {
                   : 0;
 
                 return (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {summary.event.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {new Date(summary.eventDate.event_date).toLocaleDateString('zh-TW')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-semibold text-gray-900">
-                      {summary.totalRegistrations}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-600">
-                      {summary.attendees}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-green-600 font-semibold">
-                      {summary.attended}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        attendanceRate >= 80 ? 'bg-green-100 text-green-800' :
-                        attendanceRate >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {attendanceRate}%
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-600">
-                      {summary.helpers}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-orange-600 font-semibold">
-                      {summary.nonBelievers}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-red-600 font-semibold">
-                      {summary.followUpPending}
-                    </td>
-                  </tr>
+                  <>
+                    <tr key={`row-${index}`} className="hover:bg-gray-50">
+                      <td className="px-3 py-4 whitespace-nowrap text-center">
+                        <button
+                          onClick={() => toggleRowExpansion(index)}
+                          className="text-gray-400 hover:text-gray-600 transition-transform duration-200"
+                          style={{
+                            transform: summary.isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                          }}
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {summary.event.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {new Date(summary.eventDate.event_date).toLocaleDateString('zh-TW')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-600">
+                        {summary.attendees}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-green-600 font-semibold">
+                        {summary.attended}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          attendanceRate >= 80 ? 'bg-green-100 text-green-800' :
+                          attendanceRate >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {attendanceRate}%
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-600">
+                        {summary.helpers}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-blue-600 font-semibold">
+                        {summary.totalAttended}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-orange-600 font-semibold">
+                        {summary.decisionCount}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-red-600 font-semibold">
+                        {summary.followUpPending}
+                      </td>
+                    </tr>
+                    {summary.isExpanded && (
+                      <tr key={`detail-${index}`} className="bg-blue-50">
+                        <td colSpan={10} className="px-6 py-6">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="bg-white rounded-lg p-4 shadow-sm">
+                              <div className="flex items-center gap-2 mb-4">
+                                <ListChecks className="w-5 h-5 text-blue-600" />
+                                <h4 className="text-sm font-semibold text-gray-800">跟進狀態分解</h4>
+                              </div>
+                              {summary.followUpBreakdown ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                  {Object.entries(summary.followUpBreakdown).map(([status, count]) => (
+                                    <div
+                                      key={status}
+                                      className="flex items-center justify-between p-2 rounded border border-gray-200"
+                                    >
+                                      <span className="text-xs text-gray-700">{status}</span>
+                                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                        status.startsWith('待跟進') ? 'bg-yellow-100 text-yellow-800' :
+                                        status === '已完成跟進行動' ? 'bg-green-100 text-green-800' :
+                                        'bg-blue-100 text-blue-800'
+                                      }`}>
+                                        {count}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-sm text-gray-500">載入中...</div>
+                              )}
+                            </div>
+
+                            <div className="bg-white rounded-lg p-4 shadow-sm">
+                              <div className="flex items-center gap-2 mb-4">
+                                <Heart className="w-5 h-5 text-orange-600" />
+                                <h4 className="text-sm font-semibold text-gray-800">決志資訊</h4>
+                              </div>
+                              <div className="text-center py-4">
+                                <div className="text-4xl font-bold text-orange-600 mb-2">
+                                  {summary.decisionCount}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  於此活動決志
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    ({new Date(summary.eventDate.event_date).toLocaleDateString('en-US', {
+                                      month: 'numeric',
+                                      day: 'numeric'
+                                    })})
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 );
               })}
             </tbody>
