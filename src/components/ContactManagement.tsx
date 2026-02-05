@@ -154,8 +154,13 @@ export function ContactManagement() {
     loadContacts();
   }
 
+  function findRowIndexById(contactId: string): number {
+    return rows.findIndex(r => r.id === contactId);
+  }
+
   function addNewRow() {
     const newRow: EditableRow = {
+      id: `temp-${Date.now()}-${Math.random()}`,
       name: '',
       role: 'attendee',
       faithStatus: '',
@@ -170,27 +175,35 @@ export function ContactManagement() {
     setRows([newRow, ...rows]);
   }
 
-  function updateRow(index: number, field: keyof EditableRow, value: any) {
+  function updateRow(contactId: string, field: keyof EditableRow, value: any) {
+    const index = findRowIndexById(contactId);
+    if (index === -1) return;
     const updated = [...rows];
     updated[index] = { ...updated[index], [field]: value };
     setRows(updated);
   }
 
-  function startEdit(index: number) {
+  function startEdit(contactId: string) {
+    const index = findRowIndexById(contactId);
+    if (index === -1) return;
     const updated = [...rows];
     updated[index] = { ...updated[index], isEditing: true };
     setRows(updated);
   }
 
-  function cancelEdit(index: number) {
+  function cancelEdit(contactId: string) {
+    const index = findRowIndexById(contactId);
+    if (index === -1) return;
     if (rows[index].isNew) {
-      setRows(rows.filter((_, i) => i !== index));
+      setRows(rows.filter(r => r.id !== contactId));
     } else {
       buildRows();
     }
   }
 
-  async function saveRow(index: number) {
+  async function saveRow(contactId: string) {
+    const index = findRowIndexById(contactId);
+    if (index === -1) return;
     const row = rows[index];
     if (!row.name.trim()) {
       alert('請輸入姓名');
@@ -250,7 +263,9 @@ export function ContactManagement() {
     }
   }
 
-  async function deleteRow(index: number) {
+  async function deleteRow(contactId: string) {
+    const index = findRowIndexById(contactId);
+    if (index === -1) return;
     const row = rows[index];
     if (!row.id) return;
 
@@ -670,14 +685,14 @@ export function ContactManagement() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredRows.length > 0 ? filteredRows.map((row, index) => (
-                <tr key={row.id || `new-${index}`} className={`hover:bg-gray-50 ${row.isNew ? 'bg-green-50' : ''}`}>
+              {filteredRows.length > 0 ? filteredRows.map((row) => (
+                <tr key={row.id} className={`hover:bg-gray-50 ${row.isNew ? 'bg-green-50' : ''}`}>
                   <td className="px-4 py-3 whitespace-nowrap">
                     {row.isEditing ? (
                       <input
                         type="text"
                         value={row.name}
-                        onChange={(e) => updateRow(index, 'name', e.target.value)}
+                        onChange={(e) => updateRow(row.id!, 'name', e.target.value)}
                         className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         placeholder="姓名"
                       />
@@ -689,7 +704,7 @@ export function ContactManagement() {
                     {row.isEditing ? (
                       <select
                         value={row.role}
-                        onChange={(e) => updateRow(index, 'role', e.target.value)}
+                        onChange={(e) => updateRow(row.id!, 'role', e.target.value)}
                         className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       >
                         <option value="attendee">參加者</option>
@@ -710,13 +725,13 @@ export function ContactManagement() {
                       <>
                         <input
                           type="text"
-                          list={`faith-status-list-${index}`}
+                          list={`faith-status-list-${row.id}`}
                           value={row.faithStatus}
-                          onChange={(e) => updateRow(index, 'faithStatus', e.target.value)}
+                          onChange={(e) => updateRow(row.id!, 'faithStatus', e.target.value)}
                           className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                           placeholder="信仰狀況"
                         />
-                        <datalist id={`faith-status-list-${index}`}>
+                        <datalist id={`faith-status-list-${row.id}`}>
                           {faithStatusOptions.map(status => (
                             <option key={status} value={status} />
                           ))}
@@ -731,13 +746,13 @@ export function ContactManagement() {
                       <>
                         <input
                           type="text"
-                          list={`source-group-list-${index}`}
+                          list={`source-group-list-${row.id}`}
                           value={row.sourceGroup}
-                          onChange={(e) => updateRow(index, 'sourceGroup', e.target.value)}
+                          onChange={(e) => updateRow(row.id!, 'sourceGroup', e.target.value)}
                           className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                           placeholder="來源群組"
                         />
-                        <datalist id={`source-group-list-${index}`}>
+                        <datalist id={`source-group-list-${row.id}`}>
                           {sourceGroupOptions.map(group => (
                             <option key={group} value={group} />
                           ))}
@@ -752,7 +767,7 @@ export function ContactManagement() {
                       <input
                         type="text"
                         value={row.groupName}
-                        onChange={(e) => updateRow(index, 'groupName', e.target.value)}
+                        onChange={(e) => updateRow(row.id!, 'groupName', e.target.value)}
                         className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         placeholder="組別"
                       />
@@ -765,7 +780,7 @@ export function ContactManagement() {
                       <input
                         type="checkbox"
                         checked={row.isBeliever}
-                        onChange={(e) => updateRow(index, 'isBeliever', e.target.checked)}
+                        onChange={(e) => updateRow(row.id!, 'isBeliever', e.target.checked)}
                         className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
                     ) : (
@@ -785,7 +800,7 @@ export function ContactManagement() {
                           value={row.selectedEvents || []}
                           onChange={(e) => {
                             const selectedOptions = Array.from(e.target.selectedOptions).map(opt => opt.value);
-                            updateRow(index, 'selectedEvents', selectedOptions);
+                            updateRow(row.id!, 'selectedEvents', selectedOptions);
                           }}
                           className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
@@ -856,7 +871,7 @@ export function ContactManagement() {
                       <input
                         type="text"
                         value={row.notes}
-                        onChange={(e) => updateRow(index, 'notes', e.target.value)}
+                        onChange={(e) => updateRow(row.id!, 'notes', e.target.value)}
                         className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         placeholder="備註"
                       />
@@ -868,14 +883,14 @@ export function ContactManagement() {
                     {row.isEditing ? (
                       <div className="flex items-center justify-center gap-1">
                         <button
-                          onClick={() => saveRow(index)}
+                          onClick={() => saveRow(row.id!)}
                           className="p-1 text-green-600 hover:bg-green-50 rounded"
                           title="儲存"
                         >
                           <Save className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => cancelEdit(index)}
+                          onClick={() => cancelEdit(row.id!)}
                           className="p-1 text-gray-600 hover:bg-gray-50 rounded"
                           title="取消"
                         >
@@ -885,14 +900,14 @@ export function ContactManagement() {
                     ) : (
                       <div className="flex items-center justify-center gap-1">
                         <button
-                          onClick={() => startEdit(index)}
+                          onClick={() => startEdit(row.id!)}
                           className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                           title="編輯"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => deleteRow(index)}
+                          onClick={() => deleteRow(row.id!)}
                           className="p-1 text-red-600 hover:bg-red-50 rounded"
                           title="刪除"
                         >
