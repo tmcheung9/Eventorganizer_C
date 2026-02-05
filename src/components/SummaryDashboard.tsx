@@ -5,7 +5,8 @@ import { exportToCSV, exportToPDFStructured } from '../lib/exportUtils';
 
 type FollowUpBreakdown = {
   '待跟進-需要個人關懷': number;
-  '待跟進- 可繼續邀請參加聚會': number;
+  '待跟進 - 需作栽培跟進': number;
+  '待跟進 - 可繼續邀請參加聚會': number;
   '待跟進-可邀約個人佈道或探訪': number;
   '待確定跟進日期': number;
   '已完成跟進行動': number;
@@ -158,7 +159,8 @@ export function SummaryDashboard() {
 
       const breakdown: FollowUpBreakdown = {
         '待跟進-需要個人關懷': 0,
-        '待跟進- 可繼續邀請參加聚會': 0,
+        '待跟進 - 需作栽培跟進': 0,
+        '待跟進 - 可繼續邀請參加聚會': 0,
         '待跟進-可邀約個人佈道或探訪': 0,
         '待確定跟進日期': 0,
         '已完成跟進行動': 0
@@ -184,7 +186,8 @@ export function SummaryDashboard() {
       console.error('載入跟進分解資料失敗:', error);
       return {
         '待跟進-需要個人關懷': 0,
-        '待跟進- 可繼續邀請參加聚會': 0,
+        '待跟進 - 需作栽培跟進': 0,
+        '待跟進 - 可繼續邀請參加聚會': 0,
         '待跟進-可邀約個人佈道或探訪': 0,
         '待確定跟進日期': 0,
         '已完成跟進行動': 0
@@ -321,7 +324,8 @@ export function SummaryDashboard() {
 
       const breakdown = summary.followUpBreakdown || {
         '待跟進-需要個人關懷': 0,
-        '待跟進- 可繼續邀請參加聚會': 0,
+        '待跟進 - 需作栽培跟進': 0,
+        '待跟進 - 可繼續邀請參加聚會': 0,
         '待跟進-可邀約個人佈道或探訪': 0,
         '待確定跟進日期': 0,
         '已完成跟進行動': 0
@@ -338,7 +342,8 @@ export function SummaryDashboard() {
         '決志人數': summary.decisionCount,
         '跟進狀態:待跟進': summary.followUpPending,
         '待跟進-需要個人關懷': breakdown['待跟進-需要個人關懷'],
-        '待跟進-可繼續邀請參加聚會': breakdown['待跟進- 可繼續邀請參加聚會'],
+        '待跟進 - 需作栽培跟進': breakdown['待跟進 - 需作栽培跟進'],
+        '待跟進 - 可繼續邀請參加聚會': breakdown['待跟進 - 可繼續邀請參加聚會'],
         '待跟進-可邀約個人佈道或探訪': breakdown['待跟進-可邀約個人佈道或探訪'],
         '待確定跟進日期': breakdown['待確定跟進日期'],
         '已完成跟進行動': breakdown['已完成跟進行動']
@@ -372,7 +377,8 @@ export function SummaryDashboard() {
 
       const breakdown = summary.followUpBreakdown || {
         '待跟進-需要個人關懷': 0,
-        '待跟進- 可繼續邀請參加聚會': 0,
+        '待跟進 - 需作栽培跟進': 0,
+        '待跟進 - 可繼續邀請參加聚會': 0,
         '待跟進-可邀約個人佈道或探訪': 0,
         '待確定跟進日期': 0,
         '已完成跟進行動': 0
@@ -389,7 +395,8 @@ export function SummaryDashboard() {
         '決志人數': summary.decisionCount,
         '跟進狀態:待跟進': summary.followUpPending,
         '待跟進-需要個人關懷': breakdown['待跟進-需要個人關懷'],
-        '待跟進-可繼續邀請參加聚會': breakdown['待跟進- 可繼續邀請參加聚會'],
+        '待跟進 - 需作栽培跟進': breakdown['待跟進 - 需作栽培跟進'],
+        '待跟進 - 可繼續邀請參加聚會': breakdown['待跟進 - 可繼續邀請參加聚會'],
         '待跟進-可邀約個人佈道或探訪': breakdown['待跟進-可邀約個人佈道或探訪'],
         '待確定跟進日期': breakdown['待確定跟進日期'],
         '已完成跟進行動': breakdown['已完成跟進行動']

@@ -23,9 +23,9 @@ const SEEKER_STATUS_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
-  '待跟進-慕道階段',
   '待跟進-需要個人關懷',
-  '待跟進- 可繼續邀請參加聚會',
+  '待跟進 - 需作栽培跟進',
+  '待跟進 - 可繼續邀請參加聚會',
   '待跟進-可邀約個人佈道或探訪',
   '待確定跟進日期',
   '已完成跟進行動'
@@ -135,7 +135,7 @@ export function FollowUpManagement() {
         seekerStatusDetails: followUp?.seeker_status_details || '',
         participationScore: followUp?.participation_score || 0,
         participationNotes: followUp?.participation_notes || '',
-        status: followUp?.status || '待跟進-慕道階段',
+        status: followUp?.status || '待跟進 - 可繼續邀請參加聚會',
         responsiblePerson: followUp?.responsible_person || '',
         nextFollowUpDate: followUp?.next_follow_up_date || '',
         actionNotes: followUp?.action_notes || '',
