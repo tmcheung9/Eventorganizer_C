@@ -151,30 +151,42 @@ export function FollowUpManagement() {
     setRows(newRows);
   }
 
-  function updateRow(index: number, field: keyof FollowUpRow, value: any) {
+  function findRowIndexByContactId(contactId: string): number {
+    return rows.findIndex(row => row.contactId === contactId);
+  }
+
+  function updateRow(contactId: string, field: keyof FollowUpRow, value: any) {
+    const index = findRowIndexByContactId(contactId);
+    if (index === -1) return;
     const newRows = [...rows];
     newRows[index] = { ...newRows[index], [field]: value, hasChanges: true };
     setRows(newRows);
   }
 
-  function toggleExpanded(index: number) {
+  function toggleExpanded(contactId: string) {
+    const index = findRowIndexByContactId(contactId);
+    if (index === -1) return;
     const newRows = [...rows];
     newRows[index] = { ...newRows[index], isExpanded: !newRows[index].isExpanded };
     setRows(newRows);
   }
 
-  function toggleSection(index: number, section: 'expandedSection1' | 'expandedSection5') {
+  function toggleSection(contactId: string, section: 'expandedSection1' | 'expandedSection5') {
+    const index = findRowIndexByContactId(contactId);
+    if (index === -1) return;
     const newRows = [...rows];
     newRows[index] = { ...newRows[index], [section]: !newRows[index][section] };
     setRows(newRows);
   }
 
-  async function saveRow(index: number) {
+  async function saveRow(contactId: string) {
+    const index = findRowIndexByContactId(contactId);
+    if (index === -1) return;
     const row = rows[index];
 
     try {
-      updateRow(index, 'isSaving', true);
-      updateRow(index, 'saveError', undefined);
+      updateRow(contactId, 'isSaving', true);
+      updateRow(contactId, 'saveError', undefined);
 
       if (row.followUpId) {
         const { error } = await supabase
@@ -328,11 +340,11 @@ export function FollowUpManagement() {
       </div>
 
       <div id="followup-table" className="space-y-3">
-        {filteredRows.length > 0 ? filteredRows.map((row, index) => (
+        {filteredRows.length > 0 ? filteredRows.map((row) => (
           <div key={row.contactId} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
             <div
               className="cursor-pointer bg-gradient-to-r from-blue-50 to-transparent hover:from-blue-100 p-4 flex items-center justify-between transition-colors"
-              onClick={() => toggleExpanded(index)}
+              onClick={() => toggleExpanded(row.contactId)}
             >
               <div className="flex items-center gap-4 flex-1">
                 <div className={`text-gray-600 transition-transform ${row.isExpanded ? 'rotate-180' : ''}`}>
@@ -362,7 +374,7 @@ export function FollowUpManagement() {
 
                 <section>
                   <button
-                    onClick={() => toggleSection(index, 'expandedSection1')}
+                    onClick={() => toggleSection(row.contactId, 'expandedSection1')}
                     className="flex items-center gap-2 font-semibold text-gray-900 hover:text-blue-600 mb-3 transition-colors"
                   >
                     {row.expandedSection1 ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -400,7 +412,7 @@ export function FollowUpManagement() {
                       <input
                         type="text"
                         value={row.groupLeader}
-                        onChange={(e) => updateRow(index, 'groupLeader', e.target.value)}
+                        onChange={(e) => updateRow(row.contactId, 'groupLeader', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="輸入組長名字"
                       />
@@ -424,7 +436,7 @@ export function FollowUpManagement() {
                             } else {
                               current.splice(current.indexOf(option), 1);
                             }
-                            updateRow(index, 'seekerStatus', current.join('|'));
+                            updateRow(row.contactId, 'seekerStatus', current.join('|'));
                           }}
                           className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 mt-0.5 flex-shrink-0"
                         />
@@ -437,7 +449,7 @@ export function FollowUpManagement() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">其他說明</label>
                       <textarea
                         value={row.seekerStatusDetails}
-                        onChange={(e) => updateRow(index, 'seekerStatusDetails', e.target.value)}
+                        onChange={(e) => updateRow(row.contactId, 'seekerStatusDetails', e.target.value)}
                         rows={2}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="請具體說明，例如：需要情感支持、生活幫助、職場壓力大、家庭問題等"
@@ -457,7 +469,7 @@ export function FollowUpManagement() {
                           min="0"
                           max="5"
                           value={row.participationScore}
-                          onChange={(e) => updateRow(index, 'participationScore', parseInt(e.target.value) || 0)}
+                          onChange={(e) => updateRow(row.contactId, 'participationScore', parseInt(e.target.value) || 0)}
                           className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                         />
                         <span className="text-lg font-bold text-blue-600 min-w-[2rem] text-right">
@@ -469,7 +481,7 @@ export function FollowUpManagement() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">觀察筆記</label>
                       <textarea
                         value={row.participationNotes}
-                        onChange={(e) => updateRow(index, 'participationNotes', e.target.value)}
+                        onChange={(e) => updateRow(row.contactId, 'participationNotes', e.target.value)}
                         rows={2}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="記錄參與過程中的觀察"
@@ -480,7 +492,7 @@ export function FollowUpManagement() {
 
                 <section className="border-t pt-6">
                   <button
-                    onClick={() => toggleSection(index, 'expandedSection5')}
+                    onClick={() => toggleSection(row.contactId, 'expandedSection5')}
                     className="flex items-center gap-2 font-semibold text-gray-900 hover:text-blue-600 mb-4 transition-colors"
                   >
                     {row.expandedSection5 ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -492,7 +504,7 @@ export function FollowUpManagement() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">跟進狀態</label>
                         <select
                           value={row.status}
-                          onChange={(e) => updateRow(index, 'status', e.target.value)}
+                          onChange={(e) => updateRow(row.contactId, 'status', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           {STATUS_OPTIONS.map(s => (
@@ -505,7 +517,7 @@ export function FollowUpManagement() {
                         <input
                           type="text"
                           value={row.responsiblePerson}
-                          onChange={(e) => updateRow(index, 'responsiblePerson', e.target.value)}
+                          onChange={(e) => updateRow(row.contactId, 'responsiblePerson', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="輸入負責人名字"
                         />
@@ -514,7 +526,7 @@ export function FollowUpManagement() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">跟進行動</label>
                         <textarea
                           value={row.actionNotes}
-                          onChange={(e) => updateRow(index, 'actionNotes', e.target.value)}
+                          onChange={(e) => updateRow(row.contactId, 'actionNotes', e.target.value)}
                           rows={3}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="詳細記錄跟進行動計劃"
@@ -525,7 +537,7 @@ export function FollowUpManagement() {
                         <input
                           type="date"
                           value={row.nextFollowUpDate}
-                          onChange={(e) => updateRow(index, 'nextFollowUpDate', e.target.value)}
+                          onChange={(e) => updateRow(row.contactId, 'nextFollowUpDate', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
@@ -539,7 +551,7 @@ export function FollowUpManagement() {
                   )}
                   {row.hasChanges && (
                     <button
-                      onClick={() => saveRow(index)}
+                      onClick={() => saveRow(row.contactId)}
                       disabled={row.isSaving}
                       className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >

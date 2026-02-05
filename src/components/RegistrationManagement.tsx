@@ -197,7 +197,12 @@ export function RegistrationManagement() {
     setRows(newRows);
   }
 
+  function findRowIndexByContactId(contactId: string): number {
+    return rows.findIndex(row => row.contactId === contactId);
+  }
+
   function addNewRow() {
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
     const newRow: EditableRow = {
       name: '',
       role: 'attendee',
@@ -207,25 +212,32 @@ export function RegistrationManagement() {
       position: '',
       isNew: true,
       isEditing: true,
+      contactId: tempId,
       registrations: new Map(),
       registrationSequence: 0
     };
     setRows([newRow, ...rows]);
   }
 
-  function updateRow(index: number, field: keyof EditableRow, value: any) {
+  function updateRow(contactId: string, field: keyof EditableRow, value: any) {
+    const index = findRowIndexByContactId(contactId);
+    if (index === -1) return;
     const updated = [...rows];
     updated[index] = { ...updated[index], [field]: value };
     setRows(updated);
   }
 
-  function startEdit(index: number) {
+  function startEdit(contactId: string) {
+    const index = findRowIndexByContactId(contactId);
+    if (index === -1) return;
     const updated = [...rows];
     updated[index] = { ...updated[index], isEditing: true };
     setRows(updated);
   }
 
-  function cancelEdit(index: number) {
+  function cancelEdit(contactId: string) {
+    const index = findRowIndexByContactId(contactId);
+    if (index === -1) return;
     if (rows[index].isNew) {
       setRows(rows.filter((_, i) => i !== index));
     } else {
@@ -236,7 +248,9 @@ export function RegistrationManagement() {
     }
   }
 
-  async function saveRow(index: number) {
+  async function saveRow(contactId: string) {
+    const index = findRowIndexByContactId(contactId);
+    if (index === -1) return;
     const row = rows[index];
     if (!row.name.trim()) {
       alert('請輸入姓名');
@@ -324,7 +338,9 @@ export function RegistrationManagement() {
     }
   }
 
-  async function deleteRow(index: number) {
+  async function deleteRow(contactId: string) {
+    const index = findRowIndexByContactId(contactId);
+    if (index === -1) return;
     const row = rows[index];
     if (!row.contactId) return;
 
@@ -762,13 +778,13 @@ export function RegistrationManagement() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredRows.length > 0 ? filteredRows.map((row, index) => (
+              {filteredRows.length > 0 ? filteredRows.map((row) => (
                 <tr
-                  key={row.id || `new-${index}`}
-                  className={`hover:bg-gray-50 ${row.isNew ? 'bg-green-50' : ''} ${draggedIndex === index ? 'opacity-50' : ''}`}
+                  key={row.id || `new-${row.contactId}`}
+                  className={`hover:bg-gray-50 ${row.isNew ? 'bg-green-50' : ''}`}
                   draggable={!row.isEditing && !row.isNew}
-                  onDragStart={() => handleDragStart(index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragStart={() => handleDragStart(filteredRows.indexOf(row))}
+                  onDragOver={(e) => handleDragOver(e, filteredRows.indexOf(row))}
                   onDragEnd={handleDragEnd}
                 >
                   <td className="px-2 py-3 text-center cursor-move">
@@ -781,32 +797,35 @@ export function RegistrationManagement() {
                       <>
                         <input
                           type="text"
-                          list={row.isNew ? `contact-list-${index}` : undefined}
+                          list={row.isNew ? `contact-list-${row.contactId}` : undefined}
                           value={row.name}
                           onChange={(e) => {
                             const inputName = e.target.value;
-                            updateRow(index, 'name', inputName);
+                            updateRow(row.contactId || '', 'name', inputName);
 
                             const matchedContact = contacts.find(c => c.name === inputName);
                             if (matchedContact && row.isNew) {
-                              const updated = [...rows];
-                              updated[index] = {
-                                ...updated[index],
-                                name: matchedContact.name,
-                                role: matchedContact.role as 'attendee' | 'helper',
-                                faithStatus: matchedContact.faith_status,
-                                sourceGroup: matchedContact.source_group,
-                                groupName: matchedContact.group_name,
-                                contactId: matchedContact.id
-                              };
-                              setRows(updated);
+                              const currentIndex = findRowIndexByContactId(row.contactId || '');
+                              if (currentIndex !== -1) {
+                                const updated = [...rows];
+                                updated[currentIndex] = {
+                                  ...updated[currentIndex],
+                                  name: matchedContact.name,
+                                  role: matchedContact.role as 'attendee' | 'helper',
+                                  faithStatus: matchedContact.faith_status,
+                                  sourceGroup: matchedContact.source_group,
+                                  groupName: matchedContact.group_name,
+                                  contactId: matchedContact.id
+                                };
+                                setRows(updated);
+                              }
                             }
                           }}
                           className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="輸入或選擇姓名"
                         />
                         {row.isNew && (
-                          <datalist id={`contact-list-${index}`}>
+                          <datalist id={`contact-list-${row.contactId}`}>
                             {contacts
                               .filter(c => !rows.some(r => r.contactId === c.id && r.contactId !== row.contactId))
                               .map(c => (
@@ -826,7 +845,7 @@ export function RegistrationManagement() {
                     {row.isEditing ? (
                       <select
                         value={row.role}
-                        onChange={(e) => updateRow(index, 'role', e.target.value as 'attendee' | 'helper')}
+                        onChange={(e) => updateRow(row.contactId || '', 'role', e.target.value as 'attendee' | 'helper')}
                         className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       >
                         <option value="attendee">參加者</option>
@@ -846,13 +865,13 @@ export function RegistrationManagement() {
                         <>
                           <input
                             type="text"
-                            list={`faith-status-list-${index}`}
+                            list={`faith-status-list-${row.contactId}`}
                             value={row.faithStatus}
-                            onChange={(e) => updateRow(index, 'faithStatus', e.target.value)}
+                            onChange={(e) => updateRow(row.contactId || '', 'faithStatus', e.target.value)}
                             className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                             placeholder="信仰狀況"
                           />
-                          <datalist id={`faith-status-list-${index}`}>
+                          <datalist id={`faith-status-list-${row.contactId}`}>
                             {faithStatusOptions.map(status => (
                               <option key={status} value={status} />
                             ))}
@@ -868,13 +887,13 @@ export function RegistrationManagement() {
                       <>
                         <input
                           type="text"
-                          list={`source-group-list-${index}`}
+                          list={`source-group-list-${row.contactId}`}
                           value={row.sourceGroup}
-                          onChange={(e) => updateRow(index, 'sourceGroup', e.target.value)}
+                          onChange={(e) => updateRow(row.contactId || '', 'sourceGroup', e.target.value)}
                           className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                           placeholder="來源群組"
                         />
-                        <datalist id={`source-group-list-${index}`}>
+                        <datalist id={`source-group-list-${row.contactId}`}>
                           {sourceGroupOptions.map(group => (
                             <option key={group} value={group} />
                           ))}
@@ -889,13 +908,13 @@ export function RegistrationManagement() {
                       <>
                         <input
                           type="text"
-                          list={`group-name-list-${index}`}
+                          list={`group-name-list-${row.contactId}`}
                           value={row.groupName}
-                          onChange={(e) => updateRow(index, 'groupName', e.target.value)}
+                          onChange={(e) => updateRow(row.contactId || '', 'groupName', e.target.value)}
                           className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                           placeholder="組別"
                         />
-                        <datalist id={`group-name-list-${index}`}>
+                        <datalist id={`group-name-list-${row.contactId}`}>
                           {groupNameOptions.map(groupName => (
                             <option key={groupName} value={groupName} />
                           ))}
@@ -911,7 +930,7 @@ export function RegistrationManagement() {
                         <input
                           type="text"
                           value={row.position}
-                          onChange={(e) => updateRow(index, 'position', e.target.value)}
+                          onChange={(e) => updateRow(row.contactId || '', 'position', e.target.value)}
                           className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                           placeholder="崗位"
                         />
@@ -937,15 +956,18 @@ export function RegistrationManagement() {
                             type="checkbox"
                             checked={hasReg}
                             onChange={() => {
-                              const updated = [...rows];
-                              const newRegMap = new Map(updated[index].registrations);
-                              if (hasReg) {
-                                newRegMap.delete(date.id);
-                              } else {
-                                newRegMap.set(date.id, { regId: '', position: '' });
+                              const currentIndex = findRowIndexByContactId(row.contactId || '');
+                              if (currentIndex !== -1) {
+                                const updated = [...rows];
+                                const newRegMap = new Map(updated[currentIndex].registrations);
+                                if (hasReg) {
+                                  newRegMap.delete(date.id);
+                                } else {
+                                  newRegMap.set(date.id, { regId: '', position: '' });
+                                }
+                                updated[currentIndex] = { ...updated[currentIndex], registrations: newRegMap };
+                                setRows(updated);
                               }
-                              updated[index] = { ...updated[index], registrations: newRegMap };
-                              setRows(updated);
                             }}
                             className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
                           />
@@ -959,14 +981,14 @@ export function RegistrationManagement() {
                     {row.isEditing ? (
                       <div className="flex items-center justify-center gap-1">
                         <button
-                          onClick={() => saveRow(index)}
+                          onClick={() => saveRow(row.contactId || '')}
                           className="p-1 text-green-600 hover:bg-green-50 rounded"
                           title="儲存"
                         >
                           <Save className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => cancelEdit(index)}
+                          onClick={() => cancelEdit(row.contactId || '')}
                           className="p-1 text-gray-600 hover:bg-gray-50 rounded"
                           title="取消"
                         >
@@ -976,14 +998,14 @@ export function RegistrationManagement() {
                     ) : (
                       <div className="flex items-center justify-center gap-1">
                         <button
-                          onClick={() => startEdit(index)}
+                          onClick={() => startEdit(row.contactId || '')}
                           className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                           title="編輯"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => deleteRow(index)}
+                          onClick={() => deleteRow(row.contactId || '')}
                           className="p-1 text-red-600 hover:bg-red-50 rounded"
                           title="刪除"
                         >
