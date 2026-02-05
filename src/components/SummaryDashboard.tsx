@@ -4,7 +4,6 @@ import { supabase, Event, EventDate } from '../lib/supabase';
 import { exportToCSV, exportToPDFStructured } from '../lib/exportUtils';
 
 type FollowUpBreakdown = {
-  '待跟進-慕道階段': number;
   '待跟進-需要個人關懷': number;
   '待跟進- 可繼續邀請參加聚會': number;
   '待跟進-可邀約個人佈道或探訪': number;
@@ -157,19 +156,22 @@ export function SummaryDashboard() {
         ?.filter(r => attendanceData?.some(a => a.registration_id === r.id))
         .map(r => r.contact_id) || [];
 
-      const { data: followUpsData } = await supabase
-        .from('follow_ups')
-        .select('status, contact_id')
-        .in('contact_id', attendedContactIds);
-
       const breakdown: FollowUpBreakdown = {
-        '待跟進-慕道階段': 0,
         '待跟進-需要個人關懷': 0,
         '待跟進- 可繼續邀請參加聚會': 0,
         '待跟進-可邀約個人佈道或探訪': 0,
         '待確定跟進日期': 0,
         '已完成跟進行動': 0
       };
+
+      if (attendedContactIds.length === 0) {
+        return breakdown;
+      }
+
+      const { data: followUpsData } = await supabase
+        .from('follow_ups')
+        .select('status, contact_id')
+        .in('contact_id', attendedContactIds);
 
       followUpsData?.forEach(f => {
         if (f.status in breakdown) {
@@ -181,7 +183,6 @@ export function SummaryDashboard() {
     } catch (error) {
       console.error('載入跟進分解資料失敗:', error);
       return {
-        '待跟進-慕道階段': 0,
         '待跟進-需要個人關懷': 0,
         '待跟進- 可繼續邀請參加聚會': 0,
         '待跟進-可邀約個人佈道或探訪': 0,
@@ -319,7 +320,6 @@ export function SummaryDashboard() {
         : 0;
 
       const breakdown = summary.followUpBreakdown || {
-        '待跟進-慕道階段': 0,
         '待跟進-需要個人關懷': 0,
         '待跟進- 可繼續邀請參加聚會': 0,
         '待跟進-可邀約個人佈道或探訪': 0,
@@ -337,7 +337,6 @@ export function SummaryDashboard() {
         '總出席人數': summary.totalAttended,
         '決志人數': summary.decisionCount,
         '跟進狀態:待跟進': summary.followUpPending,
-        '待跟進-慕道階段': breakdown['待跟進-慕道階段'],
         '待跟進-需要個人關懷': breakdown['待跟進-需要個人關懷'],
         '待跟進-可繼續邀請參加聚會': breakdown['待跟進- 可繼續邀請參加聚會'],
         '待跟進-可邀約個人佈道或探訪': breakdown['待跟進-可邀約個人佈道或探訪'],
@@ -372,7 +371,6 @@ export function SummaryDashboard() {
         : 0;
 
       const breakdown = summary.followUpBreakdown || {
-        '待跟進-慕道階段': 0,
         '待跟進-需要個人關懷': 0,
         '待跟進- 可繼續邀請參加聚會': 0,
         '待跟進-可邀約個人佈道或探訪': 0,
@@ -390,7 +388,6 @@ export function SummaryDashboard() {
         '總出席人數': summary.totalAttended,
         '決志人數': summary.decisionCount,
         '跟進狀態:待跟進': summary.followUpPending,
-        '待跟進-慕道階段': breakdown['待跟進-慕道階段'],
         '待跟進-需要個人關懷': breakdown['待跟進-需要個人關懷'],
         '待跟進-可繼續邀請參加聚會': breakdown['待跟進- 可繼續邀請參加聚會'],
         '待跟進-可邀約個人佈道或探訪': breakdown['待跟進-可邀約個人佈道或探訪'],
