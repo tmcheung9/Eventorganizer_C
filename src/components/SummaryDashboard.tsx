@@ -112,7 +112,8 @@ export function SummaryDashboard() {
         ).length || 0;
 
         const followUpPending = followUpsData?.filter(f =>
-          f.status === '待跟進' &&
+          f.status !== '已完成跟進行動' &&
+          f.status &&
           dateRegistrations.some(r => r.contact_id === f.contact_id)
         ).length || 0;
 
@@ -249,7 +250,8 @@ export function SummaryDashboard() {
     const totalDecisions = filteredSummaries.reduce((sum, s) => sum + s.decisionCount, 0);
 
     const totalFollowUpPending = followUpsData?.filter(f =>
-      f.status === '待跟進' &&
+      f.status !== '已完成跟進行動' &&
+      f.status &&
       relevantRegs.some(r => r.contact_id === f.contact_id)
     ).length || 0;
 
@@ -391,7 +393,7 @@ export function SummaryDashboard() {
               </div>
               <p className="text-3xl font-bold">{aggregatedStats.totalDecisions}</p>
               <p className="text-xs opacity-75 mt-1">
-                待跟進: {aggregatedStats.totalFollowUpPending}
+                跟進狀態:待跟進: {aggregatedStats.totalFollowUpPending}
               </p>
             </div>
           </div>
@@ -436,7 +438,7 @@ export function SummaryDashboard() {
             </div>
             <p className="text-3xl font-bold">{totalStats.totalDecisions}</p>
             <p className="text-xs opacity-75 mt-1">
-              待跟進: {totalStats.totalFollowUpPending}
+              跟進狀態:待跟進: {totalStats.totalFollowUpPending}
             </p>
           </div>
         </div>
@@ -478,7 +480,7 @@ export function SummaryDashboard() {
                   決志人數
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  待跟進
+                  跟進狀態:待跟進
                 </th>
               </tr>
             </thead>
