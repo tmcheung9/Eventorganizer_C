@@ -145,17 +145,20 @@ export function SummaryDashboard() {
     try {
       const { data: registrationsData } = await supabase
         .from('registrations')
-        .select('id, contact_id')
-        .eq('event_date_id', eventDateId);
+        .select('id, contact_id, role')
+        .eq('event_date_id', eventDateId)
+        .eq('role', 'attendee');
 
       const { data: attendanceData } = await supabase
         .from('attendance')
         .select('registration_id')
         .eq('attended', true);
 
-      const attendedContactIds = registrationsData
-        ?.filter(r => attendanceData?.some(a => a.registration_id === r.id))
-        .map(r => r.contact_id) || [];
+      const uniqueAttendedContactIds = Array.from(new Set(
+        registrationsData
+          ?.filter(r => attendanceData?.some(a => a.registration_id === r.id))
+          .map(r => r.contact_id) || []
+      ));
 
       const breakdown: FollowUpBreakdown = {
         '待跟進-需要個人關懷': 0,
@@ -166,20 +169,29 @@ export function SummaryDashboard() {
         '已完成跟進行動': 0
       };
 
-      if (attendedContactIds.length === 0) {
+      if (uniqueAttendedContactIds.length === 0) {
         return breakdown;
       }
 
       const { data: followUpsData } = await supabase
         .from('follow_ups')
         .select('status, contact_id')
-        .in('contact_id', attendedContactIds);
+        .in('contact_id', uniqueAttendedContactIds);
+
+      const contactsWithFollowUp = new Set<string>();
 
       followUpsData?.forEach(f => {
+        contactsWithFollowUp.add(f.contact_id);
         if (f.status in breakdown) {
           breakdown[f.status as keyof FollowUpBreakdown]++;
         }
       });
+
+      const contactsWithoutFollowUp = uniqueAttendedContactIds.filter(
+        id => !contactsWithFollowUp.has(id)
+      );
+
+      breakdown['待跟進 - 可繼續邀請參加聚會'] += contactsWithoutFollowUp.length;
 
       return breakdown;
     } catch (error) {

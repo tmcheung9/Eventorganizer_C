@@ -188,46 +188,39 @@ export function FollowUpManagement() {
       updateRow(contactId, 'isSaving', true);
       updateRow(contactId, 'saveError', undefined);
 
-      if (row.followUpId) {
-        const { error } = await supabase
-          .from('follow_ups')
-          .update({
-            group_leader: row.groupLeader,
-            seeker_status: row.seekerStatus,
-            seeker_status_details: row.seekerStatusDetails,
-            participation_score: row.participationScore || null,
-            participation_notes: row.participationNotes,
-            status: row.status,
-            responsible_person: row.responsiblePerson,
-            next_follow_up_date: row.nextFollowUpDate || null,
-            action_notes: row.actionNotes,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', row.followUpId);
+      const { data, error } = await supabase
+        .from('follow_ups')
+        .upsert({
+          contact_id: row.contactId,
+          group_leader: row.groupLeader,
+          seeker_status: row.seekerStatus,
+          seeker_status_details: row.seekerStatusDetails,
+          participation_score: row.participationScore || null,
+          participation_notes: row.participationNotes,
+          status: row.status,
+          responsible_person: row.responsiblePerson,
+          next_follow_up_date: row.nextFollowUpDate || null,
+          action_notes: row.actionNotes,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'contact_id'
+        })
+        .select()
+        .single();
 
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('follow_ups')
-          .insert([{
-            contact_id: row.contactId,
-            group_leader: row.groupLeader,
-            seeker_status: row.seekerStatus,
-            seeker_status_details: row.seekerStatusDetails,
-            participation_score: row.participationScore || null,
-            participation_notes: row.participationNotes,
-            status: row.status,
-            responsible_person: row.responsiblePerson,
-            next_follow_up_date: row.nextFollowUpDate || null,
-            action_notes: row.actionNotes
-          }]);
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       const newRows = [...rows];
-      newRows[index] = { ...newRows[index], hasChanges: false, isSaving: false, saveError: undefined };
+      newRows[index] = {
+        ...newRows[index],
+        followUpId: data.id,
+        hasChanges: false,
+        isSaving: false,
+        saveError: undefined
+      };
       setRows(newRows);
+
+      await loadData();
     } catch (error) {
       console.error('保存失敗:', error);
       const newRows = [...rows];
