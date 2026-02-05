@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Users, CheckCircle, UserCheck, Filter, ChevronDown, ChevronRight, Heart, ListChecks } from 'lucide-react';
+import { Users, CheckCircle, UserCheck, Filter, ChevronDown, ChevronRight, Heart, ListChecks, Download, FileText } from 'lucide-react';
 import { supabase, Event, EventDate } from '../lib/supabase';
+import { exportToCSV, exportToPDFStructured } from '../lib/exportUtils';
 
 type FollowUpBreakdown = {
   '待跟進-慕道階段': number;
@@ -296,13 +297,89 @@ export function SummaryDashboard() {
     totalFollowUpPending: 0
   });
 
+  function handleExportCSV() {
+    if (filteredSummaries.length === 0) {
+      alert('沒有資料可以匯出');
+      return;
+    }
+
+    const csvData = filteredSummaries.map(summary => {
+      const attendanceRate = summary.attendees > 0
+        ? Math.round((summary.attended / summary.attendees) * 100)
+        : 0;
+
+      return {
+        '活動名稱': summary.event.name,
+        '日期': new Date(summary.eventDate.event_date).toLocaleDateString('zh-TW'),
+        '參加者登記': summary.attendees,
+        '參加者出席': summary.attended,
+        '參加者出席率': `${attendanceRate}%`,
+        '協助者出席': summary.helpers,
+        '總出席人數': summary.totalAttended,
+        '決志人數': summary.decisionCount,
+        '跟進狀態:待跟進': summary.followUpPending
+      };
+    });
+
+    const fileName = `統計摘要_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}`;
+    exportToCSV(csvData, fileName);
+  }
+
+  function handleExportPDF() {
+    if (filteredSummaries.length === 0) {
+      alert('沒有資料可以匯出');
+      return;
+    }
+
+    const pdfData = filteredSummaries.map(summary => {
+      const attendanceRate = summary.attendees > 0
+        ? Math.round((summary.attended / summary.attendees) * 100)
+        : 0;
+
+      return {
+        '活動名稱': summary.event.name,
+        '日期': new Date(summary.eventDate.event_date).toLocaleDateString('zh-TW'),
+        '參加者登記': summary.attendees,
+        '參加者出席': summary.attended,
+        '參加者出席率': `${attendanceRate}%`,
+        '協助者出席': summary.helpers,
+        '總出席人數': summary.totalAttended,
+        '決志人數': summary.decisionCount,
+        '跟進狀態:待跟進': summary.followUpPending
+      };
+    });
+
+    const fileName = `統計摘要_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}`;
+    exportToPDFStructured(pdfData, fileName);
+  }
+
   if (loading) {
     return <div className="p-8 text-center text-gray-500">載入中...</div>;
   }
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">統計摘要</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">統計摘要</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportCSV}
+            disabled={filteredSummaries.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            匯出CSV
+          </button>
+          <button
+            onClick={handleExportPDF}
+            disabled={filteredSummaries.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            <FileText className="w-4 h-4" />
+            列印PDF
+          </button>
+        </div>
+      </div>
 
       <div className="mb-6 flex items-center gap-3 flex-wrap">
         <Filter className="w-5 h-5 text-gray-500" />
