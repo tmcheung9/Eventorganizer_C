@@ -297,16 +297,35 @@ export function SummaryDashboard() {
     totalFollowUpPending: 0
   });
 
-  function handleExportCSV() {
+  async function handleExportCSV() {
     if (filteredSummaries.length === 0) {
       alert('沒有資料可以匯出');
       return;
     }
 
-    const csvData = filteredSummaries.map(summary => {
+    // Load all breakdown data before exporting
+    const summariesWithBreakdown = await Promise.all(
+      filteredSummaries.map(async (summary) => {
+        if (!summary.followUpBreakdown) {
+          summary.followUpBreakdown = await loadFollowUpBreakdown(summary.eventDate.id);
+        }
+        return summary;
+      })
+    );
+
+    const csvData = summariesWithBreakdown.map(summary => {
       const attendanceRate = summary.attendees > 0
         ? Math.round((summary.attended / summary.attendees) * 100)
         : 0;
+
+      const breakdown = summary.followUpBreakdown || {
+        '待跟進-慕道階段': 0,
+        '待跟進-需要個人關懷': 0,
+        '待跟進- 可繼續邀請參加聚會': 0,
+        '待跟進-可邀約個人佈道或探訪': 0,
+        '待確定跟進日期': 0,
+        '已完成跟進行動': 0
+      };
 
       return {
         '活動名稱': summary.event.name,
@@ -317,7 +336,13 @@ export function SummaryDashboard() {
         '協助者出席': summary.helpers,
         '總出席人數': summary.totalAttended,
         '決志人數': summary.decisionCount,
-        '跟進狀態:待跟進': summary.followUpPending
+        '跟進狀態:待跟進': summary.followUpPending,
+        '待跟進-慕道階段': breakdown['待跟進-慕道階段'],
+        '待跟進-需要個人關懷': breakdown['待跟進-需要個人關懷'],
+        '待跟進-可繼續邀請參加聚會': breakdown['待跟進- 可繼續邀請參加聚會'],
+        '待跟進-可邀約個人佈道或探訪': breakdown['待跟進-可邀約個人佈道或探訪'],
+        '待確定跟進日期': breakdown['待確定跟進日期'],
+        '已完成跟進行動': breakdown['已完成跟進行動']
       };
     });
 
@@ -325,16 +350,35 @@ export function SummaryDashboard() {
     exportToCSV(csvData, fileName);
   }
 
-  function handleExportPDF() {
+  async function handleExportPDF() {
     if (filteredSummaries.length === 0) {
       alert('沒有資料可以匯出');
       return;
     }
 
-    const pdfData = filteredSummaries.map(summary => {
+    // Load all breakdown data before exporting
+    const summariesWithBreakdown = await Promise.all(
+      filteredSummaries.map(async (summary) => {
+        if (!summary.followUpBreakdown) {
+          summary.followUpBreakdown = await loadFollowUpBreakdown(summary.eventDate.id);
+        }
+        return summary;
+      })
+    );
+
+    const pdfData = summariesWithBreakdown.map(summary => {
       const attendanceRate = summary.attendees > 0
         ? Math.round((summary.attended / summary.attendees) * 100)
         : 0;
+
+      const breakdown = summary.followUpBreakdown || {
+        '待跟進-慕道階段': 0,
+        '待跟進-需要個人關懷': 0,
+        '待跟進- 可繼續邀請參加聚會': 0,
+        '待跟進-可邀約個人佈道或探訪': 0,
+        '待確定跟進日期': 0,
+        '已完成跟進行動': 0
+      };
 
       return {
         '活動名稱': summary.event.name,
@@ -345,7 +389,13 @@ export function SummaryDashboard() {
         '協助者出席': summary.helpers,
         '總出席人數': summary.totalAttended,
         '決志人數': summary.decisionCount,
-        '跟進狀態:待跟進': summary.followUpPending
+        '跟進狀態:待跟進': summary.followUpPending,
+        '待跟進-慕道階段': breakdown['待跟進-慕道階段'],
+        '待跟進-需要個人關懷': breakdown['待跟進-需要個人關懷'],
+        '待跟進-可繼續邀請參加聚會': breakdown['待跟進- 可繼續邀請參加聚會'],
+        '待跟進-可邀約個人佈道或探訪': breakdown['待跟進-可邀約個人佈道或探訪'],
+        '待確定跟進日期': breakdown['待確定跟進日期'],
+        '已完成跟進行動': breakdown['已完成跟進行動']
       };
     });
 

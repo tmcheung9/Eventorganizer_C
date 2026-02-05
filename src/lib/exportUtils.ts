@@ -127,7 +127,7 @@ export function exportToPDFStructured(data: any[], filename: string) {
             border-collapse: collapse;
             margin: 8px 0;
             font-family: ${fontStack} !important;
-            font-size: 8pt;
+            font-size: 7pt;
           }
 
           thead {
@@ -136,22 +136,21 @@ export function exportToPDFStructured(data: any[], filename: string) {
 
           th {
             border: 1px solid #666;
-            padding: 6px 4px;
+            padding: 4px 2px;
             text-align: center;
             font-weight: 600;
-            font-size: 8pt;
+            font-size: 7pt;
             word-break: break-word;
             white-space: normal;
           }
 
           td {
             border: 1px solid #999;
-            padding: 4px;
-            text-align: left;
-            font-size: 8pt;
+            padding: 3px 2px;
+            text-align: center;
+            font-size: 7pt;
             word-break: break-word;
             white-space: normal;
-            max-width: 100px;
           }
 
           tr {
@@ -172,10 +171,10 @@ export function exportToPDFStructured(data: any[], filename: string) {
           }
 
           @media print {
-            @page { size: A4 landscape; margin: 8mm; }
-            body { margin: 0; padding: 8mm; }
-            table { font-size: 7pt; }
-            th, td { padding: 3px 2px; font-size: 7pt; }
+            @page { size: A4 landscape; margin: 6mm; }
+            body { margin: 0; padding: 6mm; }
+            table { font-size: 6pt; }
+            th, td { padding: 2px 1px; font-size: 6pt; }
           }
         </style>
       </head>
