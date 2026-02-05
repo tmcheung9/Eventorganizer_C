@@ -143,7 +143,7 @@ export function SummaryDashboard() {
     try {
       const { data: registrationsData } = await supabase
         .from('registrations')
-        .select('contact_id')
+        .select('id, contact_id')
         .eq('event_date_id', eventDateId);
 
       const { data: attendanceData } = await supabase
