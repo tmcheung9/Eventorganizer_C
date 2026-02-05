@@ -75,8 +75,6 @@ export type FollowUp = {
   participation_notes: string;
   inquiry_status: string;
   inquiry_status_other: string;
-  participation_enthusiasm_score: number;
-  participation_enthusiasm_notes: string;
   status: string;
   responsible_person: string;
   next_follow_up_date: string | null;

@@ -11,7 +11,7 @@ type ContactEvent = {
 };
 
 const SEEKER_STATUS_OPTIONS = [
-  '1）純粹打發時間',
+  '1）純粹打發時間 或只是有興趣食飯',
   '2）因有家庭成員參加，所以跟著來',
   '3）較靜，不太願意分享',
   '4）個人性格較開放，但主要分享生活觀念/意見',
@@ -22,7 +22,14 @@ const SEEKER_STATUS_OPTIONS = [
   '9）其他（請具體說明）'
 ];
 
-const STATUS_OPTIONS = ['待跟進', '已確認', '待確認後續日期', '需要關懷', '已完成'];
+const STATUS_OPTIONS = [
+  '待跟進-慕道階段',
+  '待跟進-需要個人關懷',
+  '待跟進- 可繼續邀請參加聚會',
+  '待跟進-可邀約個人佈道或探訪',
+  '待確定跟進日期',
+  '已完成跟進行動'
+];
 
 type FollowUpRow = {
   contactId: string;
@@ -35,8 +42,6 @@ type FollowUpRow = {
   seekerStatusDetails: string;
   participationScore: number;
   participationNotes: string;
-  participationEnthusiasmScore: number;
-  participationEnthusiasmNotes: string;
   status: string;
   responsiblePerson: string;
   nextFollowUpDate: string;
@@ -130,9 +135,7 @@ export function FollowUpManagement() {
         seekerStatusDetails: followUp?.seeker_status_details || '',
         participationScore: followUp?.participation_score || 0,
         participationNotes: followUp?.participation_notes || '',
-        participationEnthusiasmScore: followUp?.participation_enthusiasm_score || 0,
-        participationEnthusiasmNotes: followUp?.participation_enthusiasm_notes || '',
-        status: followUp?.status || '待跟進',
+        status: followUp?.status || '待跟進-慕道階段',
         responsiblePerson: followUp?.responsible_person || '',
         nextFollowUpDate: followUp?.next_follow_up_date || '',
         actionNotes: followUp?.action_notes || '',
@@ -182,8 +185,6 @@ export function FollowUpManagement() {
             seeker_status_details: row.seekerStatusDetails,
             participation_score: row.participationScore || null,
             participation_notes: row.participationNotes,
-            participation_enthusiasm_score: row.participationEnthusiasmScore,
-            participation_enthusiasm_notes: row.participationEnthusiasmNotes,
             status: row.status,
             responsible_person: row.responsiblePerson,
             next_follow_up_date: row.nextFollowUpDate || null,
@@ -203,8 +204,6 @@ export function FollowUpManagement() {
             seeker_status_details: row.seekerStatusDetails,
             participation_score: row.participationScore || null,
             participation_notes: row.participationNotes,
-            participation_enthusiasm_score: row.participationEnthusiasmScore,
-            participation_enthusiasm_notes: row.participationEnthusiasmNotes,
             status: row.status,
             responsible_person: row.responsiblePerson,
             next_follow_up_date: row.nextFollowUpDate || null,
@@ -241,8 +240,6 @@ export function FollowUpManagement() {
       '狀態詳情': row.seekerStatusDetails || '',
       '參與程度': row.participationScore > 0 ? `${row.participationScore}/5` : '',
       '觀察筆記': row.participationNotes || '',
-      '熱忱程度': row.participationEnthusiasmScore > 0 ? `${row.participationEnthusiasmScore}/5` : '',
-      '熱忱筆記': row.participationEnthusiasmNotes || '',
       '跟進狀態': row.status,
       '負責人': row.responsiblePerson || '',
       '跟進行動': row.actionNotes || '',
@@ -261,8 +258,6 @@ export function FollowUpManagement() {
       '狀態詳情': row.seekerStatusDetails || '',
       '參與程度': row.participationScore > 0 ? `${row.participationScore}/5` : '',
       '觀察筆記': row.participationNotes || '',
-      '熱忱程度': row.participationEnthusiasmScore > 0 ? `${row.participationEnthusiasmScore}/5` : '',
-      '熱忱筆記': row.participationEnthusiasmNotes || '',
       '跟進狀態': row.status,
       '負責人': row.responsiblePerson || '',
       '跟進行動': row.actionNotes || '',
@@ -347,9 +342,9 @@ export function FollowUpManagement() {
                   <div className="text-lg font-semibold text-gray-900">{row.contactName}</div>
                   <div className="text-sm text-gray-600 mt-1">
                     信仰狀況: {row.faithStatus || '-'} • 來源: {row.sourceGroup || '-'} • 狀態: <span className={`font-medium ${
-                      row.status === '已確認' ? 'text-green-600' :
-                      row.status === '待跟進' ? 'text-yellow-600' :
-                      row.status === '需要關懷' ? 'text-red-600' : 'text-gray-600'
+                      row.status === '已完成跟進行動' ? 'text-green-600' :
+                      row.status === '待確定跟進日期' ? 'text-yellow-600' :
+                      row.status.startsWith('待跟進') ? 'text-orange-600' : 'text-gray-600'
                     }`}>{row.status}</span>
                   </div>
                 </div>
@@ -479,22 +474,6 @@ export function FollowUpManagement() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="記錄參與過程中的觀察"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">熱忱程度評分 (1-5)</label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="range"
-                          min="0"
-                          max="5"
-                          value={row.participationEnthusiasmScore}
-                          onChange={(e) => updateRow(index, 'participationEnthusiasmScore', parseInt(e.target.value) || 0)}
-                          className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                        />
-                        <span className="text-lg font-bold text-blue-600 min-w-[2rem] text-right">
-                          {row.participationEnthusiasmScore === 0 ? '-' : row.participationEnthusiasmScore}/5
-                        </span>
-                      </div>
                     </div>
                   </div>
                 </section>
