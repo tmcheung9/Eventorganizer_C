@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Calendar, Filter, Download } from 'lucide-react';
+import { ChevronDown, ChevronUp, Calendar, Filter, Download, FileText } from 'lucide-react';
 import { supabase, Contact, Event, EventDate, Registration, Attendance } from '../lib/supabase';
+import { exportToCSV, exportToPDFStructured } from '../lib/exportUtils';
 
 type ContactStats = {
   contact: Contact;
@@ -139,31 +140,42 @@ export function Statistics() {
     setExpandedContacts(newExpanded);
   }
 
-  function exportStatistics() {
-    const csvData: string[] = [];
-    csvData.push('姓名,信仰狀態,來源群體,活動,日期,出席狀態');
+  function handleExportCSV() {
+    const exportData = filteredStats.map(stat => {
+      const attendanceRate = stat.totalRegistered > 0
+        ? Math.round((stat.totalAttended / stat.totalRegistered) * 100)
+        : 0;
 
-    stats.forEach(stat => {
-      stat.eventAttendance.forEach(eventData => {
-        eventData.dates.forEach(dateInfo => {
-          const row = [
-            stat.contact.name,
-            stat.contact.faith_status || '',
-            stat.contact.source_group || '',
-            eventData.event.name,
-            new Date(dateInfo.date.event_date).toLocaleDateString('zh-TW'),
-            dateInfo.attended ? '出席' : '缺席'
-          ];
-          csvData.push(row.join(','));
-        });
-      });
+      return {
+        '姓名': stat.contact.name,
+        '信仰狀態': stat.contact.faith_status || '',
+        '來源群體': stat.contact.source_group || '',
+        '出席率': `${attendanceRate}%`,
+        '出席次數': stat.totalAttended.toString(),
+        '報名次數': stat.totalRegistered.toString(),
+        '出席/報名': `${stat.totalAttended}/${stat.totalRegistered}`
+      };
     });
+    exportToCSV(exportData, `個人出席統計_${new Date().toLocaleDateString('zh-TW')}`);
+  }
 
-    const blob = new Blob(['\ufeff' + csvData.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `出席統計_${new Date().toLocaleDateString('zh-TW')}.csv`;
-    link.click();
+  function handleExportPDF() {
+    const exportData = filteredStats.map(stat => {
+      const attendanceRate = stat.totalRegistered > 0
+        ? Math.round((stat.totalAttended / stat.totalRegistered) * 100)
+        : 0;
+
+      return {
+        '姓名': stat.contact.name,
+        '信仰狀態': stat.contact.faith_status || '',
+        '來源群體': stat.contact.source_group || '',
+        '出席率': `${attendanceRate}%`,
+        '出席次數': stat.totalAttended.toString(),
+        '報名次數': stat.totalRegistered.toString(),
+        '出席/報名': `${stat.totalAttended}/${stat.totalRegistered}`
+      };
+    });
+    exportToPDFStructured(exportData, `個人出席統計_${new Date().toLocaleDateString('zh-TW')}`);
   }
 
   const filteredStats = stats.filter(stat =>
@@ -178,13 +190,24 @@ export function Statistics() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">個人出席統計</h1>
-        <button
-          onClick={exportStatistics}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-        >
-          <Download className="w-4 h-4" />
-          匯出 CSV
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportCSV}
+            disabled={filteredStats.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            <Download className="w-5 h-5" />
+            匯出CSV
+          </button>
+          <button
+            onClick={handleExportPDF}
+            disabled={filteredStats.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            <FileText className="w-5 h-5" />
+            列印PDF
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
@@ -357,7 +380,7 @@ export function Statistics() {
           <li>• 點擊「展開」查看個人詳細出席記錄</li>
           <li>• 綠色標籤表示已出席，紅色標籤表示缺席</li>
           <li>• 使用篩選條件可以查看特定時間範圍或活動的統計</li>
-          <li>• 點擊「匯出 CSV」可下載完整統計報告</li>
+          <li>• 點擊「匯出CSV」可下載完整統計報告，點擊「列印PDF」可生成可列印的報告</li>
         </ul>
       </div>
     </div>

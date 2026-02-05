@@ -1,20 +1,3 @@
-interface ExportFollowUpRow {
-  姓名: string;
-  信仰狀況: string;
-  來源群組: string;
-  組長: string;
-  慕道狀態: string;
-  狀態詳情: string;
-  參與程度: string;
-  觀察筆記: string;
-  熱忱程度: string;
-  熱忱筆記: string;
-  跟進狀態: string;
-  負責人: string;
-  跟進行動: string;
-  下次跟進日期: string;
-}
-
 function formatSeekerStatus(statuses: string): string {
   if (!statuses) return '';
   return statuses
@@ -24,13 +7,13 @@ function formatSeekerStatus(statuses: string): string {
     .join('; ');
 }
 
-export function exportToCSV(data: ExportFollowUpRow[], filename: string) {
+export function exportToCSV(data: any[], filename: string) {
   if (data.length === 0) {
     alert('沒有資料可以匯出');
     return;
   }
 
-  const headers = Object.keys(data[0]) as (keyof ExportFollowUpRow)[];
+  const headers = Object.keys(data[0]);
   const csvContent = [
     headers.join(','),
     ...data.map(row =>
@@ -66,24 +49,7 @@ export function exportToCSV(data: ExportFollowUpRow[], filename: string) {
   document.body.removeChild(link);
 }
 
-interface PDFFollowUpRow {
-  姓名: string;
-  信仰狀況: string;
-  來源群組: string;
-  組長: string;
-  慕道狀態: string;
-  狀態詳情: string;
-  參與程度: string;
-  觀察筆記: string;
-  熱忱程度: string;
-  熱忱筆記: string;
-  跟進狀態: string;
-  負責人: string;
-  跟進行動: string;
-  下次跟進日期: string;
-}
-
-export function exportToPDFStructured(data: PDFFollowUpRow[], filename: string) {
+export function exportToPDFStructured(data: any[], filename: string) {
   if (data.length === 0) {
     alert('沒有資料可以匯出');
     return;
@@ -98,22 +64,16 @@ export function exportToPDFStructured(data: PDFFollowUpRow[], filename: string) 
   const fontStack = '"PingFang SC", "PingFang TC", "STHeiti", "Microsoft YaHei", "Hiragino Sans GB", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif';
   const timestamp = new Date().toLocaleDateString('zh-TW');
 
+  // Get column headers from the first row
+  const headers = Object.keys(data[0]);
+
+  // Generate table header row
+  const tableHeaders = headers.map(header => `<th>${escapeHtml(header)}</th>`).join('');
+
+  // Generate table rows
   const tableRows = data.map(row => `
     <tr>
-      <td>${escapeHtml(row.姓名)}</td>
-      <td>${escapeHtml(row.信仰狀況)}</td>
-      <td>${escapeHtml(row.來源群組)}</td>
-      <td>${escapeHtml(row.組長)}</td>
-      <td>${escapeHtml(row.慕道狀態)}</td>
-      <td>${escapeHtml(row.狀態詳情)}</td>
-      <td>${escapeHtml(row.參與程度)}</td>
-      <td>${escapeHtml(row.觀察筆記)}</td>
-      <td>${escapeHtml(row.熱忱程度)}</td>
-      <td>${escapeHtml(row.熱忱筆記)}</td>
-      <td>${escapeHtml(row.跟進狀態)}</td>
-      <td>${escapeHtml(row.負責人)}</td>
-      <td>${escapeHtml(row.跟進行動)}</td>
-      <td>${escapeHtml(row.下次跟進日期)}</td>
+      ${headers.map(header => `<td>${escapeHtml(String(row[header] || ''))}</td>`).join('')}
     </tr>
   `).join('');
 
@@ -228,20 +188,7 @@ export function exportToPDFStructured(data: PDFFollowUpRow[], filename: string) 
         <table>
           <thead>
             <tr>
-              <th>姓名</th>
-              <th>信仰狀況</th>
-              <th>來源群組</th>
-              <th>組長</th>
-              <th>慕道狀態</th>
-              <th>狀態詳情</th>
-              <th>參與程度</th>
-              <th>觀察筆記</th>
-              <th>熱忱程度</th>
-              <th>熱忱筆記</th>
-              <th>跟進狀態</th>
-              <th>負責人</th>
-              <th>跟進行動</th>
-              <th>下次跟進日期</th>
+              ${tableHeaders}
             </tr>
           </thead>
           <tbody>
