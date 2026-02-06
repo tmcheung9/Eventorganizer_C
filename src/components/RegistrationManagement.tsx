@@ -265,7 +265,7 @@ export function RegistrationManagement() {
     try {
       let contactId = row.contactId;
 
-      if (row.isNew && !contactId) {
+      if (row.isNew && contactId?.startsWith('temp-')) {
         const { data: newContact, error: contactError } = await supabase
           .from('contacts')
           .insert([{
@@ -284,6 +284,24 @@ export function RegistrationManagement() {
         contactId = newContact.id;
 
         // Create registrations for checked dates
+        if (row.registrations.size > 0) {
+          const registrationsToInsert = Array.from(row.registrations.keys()).map(eventDateId => ({
+            contact_id: contactId,
+            event_date_id: eventDateId,
+            registration_status: '已確認',
+            registration_type: 'new',
+            position: row.position || '',
+            role: row.role
+          }));
+
+          const { error: regInsertError } = await supabase
+            .from('registrations')
+            .insert(registrationsToInsert);
+
+          if (regInsertError) throw regInsertError;
+        }
+      } else if (row.isNew && contactId) {
+        // User selected an existing contact, create registrations for it
         if (row.registrations.size > 0) {
           const registrationsToInsert = Array.from(row.registrations.keys()).map(eventDateId => ({
             contact_id: contactId,
