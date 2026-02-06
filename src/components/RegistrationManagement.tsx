@@ -962,14 +962,14 @@ export function RegistrationManagement() {
                     const hasReg = !!regData;
                     return (
                       <td key={date.id} className="px-4 py-3 text-center">
-                        {row.contactId ? (
+                        {!row.isNew ? (
                           <input
                             type="checkbox"
                             checked={hasReg}
                             onChange={() => toggleRegistration(row.contactId!, date.id, regData)}
                             className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
                           />
-                        ) : row.isNew ? (
+                        ) : (
                           <input
                             type="checkbox"
                             checked={hasReg}
@@ -989,8 +989,6 @@ export function RegistrationManagement() {
                             }}
                             className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
                           />
-                        ) : (
-                          <span className="text-gray-300">-</span>
                         )}
                       </td>
                     );
