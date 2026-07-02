@@ -18,6 +18,7 @@ function App() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('registrations');
 
   useEffect(() => {
     const auth = sessionStorage.getItem(AUTH_KEY);
@@ -93,8 +94,6 @@ function App() {
 
   const configError = ConfigCheck();
   if (configError) return configError;
-
-  const [activeTab, setActiveTab] = useState('registrations');
 
   const tabs = [
     { id: 'registrations', label: '報名管理', icon: UserPlus },
