@@ -21,3 +21,9 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# One-off local helper files (contain real contact data or are disposable
+# convenience copies of files already in supabase/migrations/) — never commit.
+combined_schema.sql
+finish_load.sql
+app_password_seed.local.sql

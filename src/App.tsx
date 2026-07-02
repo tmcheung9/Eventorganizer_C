@@ -9,15 +9,16 @@ import { SummaryDashboard } from './components/SummaryDashboard';
 import { ContactManagement } from './components/ContactManagement';
 import { Statistics } from './components/Statistics';
 import { ConfigCheck } from './components/ConfigCheck';
+import { supabase } from './lib/supabase';
 
 const AUTH_KEY = 'church_event_auth';
-const VALID_PASSWORD = '202607';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [activeTab, setActiveTab] = useState('registrations');
 
   useEffect(() => {
@@ -28,9 +29,18 @@ function App() {
     setIsLoading(false);
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === VALID_PASSWORD) {
+    setIsVerifying(true);
+    setError('');
+
+    const { data, error: rpcError } = await supabase.rpc('verify_app_password', {
+      input: password,
+    });
+
+    setIsVerifying(false);
+
+    if (!rpcError && data === true) {
       sessionStorage.setItem(AUTH_KEY, 'authenticated');
       setIsAuthenticated(true);
       setError('');
@@ -82,9 +92,10 @@ function App() {
 
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              disabled={isVerifying}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-60"
             >
-              登入
+              {isVerifying ? '驗證中...' : '登入'}
             </button>
           </form>
         </div>
