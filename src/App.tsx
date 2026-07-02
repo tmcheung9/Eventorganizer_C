@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Calendar, UserPlus, CheckCircle, MessageSquare, BarChart3, Church, Users, Settings, TrendingUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, UserPlus, CheckCircle, MessageSquare, BarChart3, Church, Users, Settings, TrendingUp, Lock, AlertCircle } from 'lucide-react';
 import { TabNavigation } from './components/TabNavigation';
 import { EventManagement } from './components/EventManagement';
 import { RegistrationManagement } from './components/RegistrationManagement';
@@ -10,7 +10,87 @@ import { ContactManagement } from './components/ContactManagement';
 import { Statistics } from './components/Statistics';
 import { ConfigCheck } from './components/ConfigCheck';
 
+const AUTH_KEY = 'church_event_auth';
+const VALID_PASSWORD = '202607';
+
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const auth = sessionStorage.getItem(AUTH_KEY);
+    if (auth === 'authenticated') {
+      setIsAuthenticated(true);
+    }
+    setIsLoading(false);
+  }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === VALID_PASSWORD) {
+      sessionStorage.setItem(AUTH_KEY, 'authenticated');
+      setIsAuthenticated(true);
+      setError('');
+    } else {
+      setError('密碼錯誤');
+      setPassword('');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+          <div className="flex items-center justify-center mb-6">
+            <div className="bg-blue-600 p-4 rounded-xl">
+              <Church className="w-10 h-10 text-white" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">教會活動籌辦系統</h1>
+          <p className="text-center text-gray-500 mb-8">請輸入密碼以繼續</p>
+
+          <form onSubmit={handleLogin}>
+            <div className="relative mb-4">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="輸入密碼"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2 text-red-600 mb-4 text-sm">
+                <AlertCircle className="w-4 h-4" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              登入
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   const configError = ConfigCheck();
   if (configError) return configError;
 
