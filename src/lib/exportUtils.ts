@@ -211,6 +211,8 @@ export function exportToPDFStructured(data: any[], filename: string) {
   }, 500);
 }
 
+const DATE_HEADER_PATTERN = /^\d{1,2}\/\d{1,2}$/;
+
 function buildPrintableTableHtml(element: HTMLElement): string {
   const clone = element.cloneNode(true) as HTMLElement;
 
@@ -243,6 +245,37 @@ function buildPrintableTableHtml(element: HTMLElement): string {
   });
 
   clone.querySelectorAll('button, [role="button"]').forEach(el => el.remove());
+
+  // Drop columns that carry no printable information: the leading drag-handle
+  // column (empty header) and the actions column (edit/delete buttons, which
+  // are already stripped above, leaving it blank).
+  const headerRow = clone.querySelector('thead tr');
+  const bodyRows = Array.from(clone.querySelectorAll('tbody tr'));
+  if (headerRow) {
+    const headerCells = Array.from(headerRow.children) as HTMLElement[];
+    const columnsToDrop = headerCells
+      .map((th, index) => ({ index, text: th.textContent?.trim() || '' }))
+      .filter(({ text }) => text === '' || text === '操作')
+      .map(({ index }) => index)
+      .sort((a, b) => b - a); // remove from the end so earlier indices stay valid
+
+    columnsToDrop.forEach(index => {
+      headerCells[index]?.remove();
+      bodyRows.forEach(row => row.children[index]?.remove());
+    });
+
+    // Narrow columns (dates, single check marks) need far less width than
+    // text-heavy columns (names, group labels). table-layout: fixed divides
+    // width evenly by default, which was squeezing Chinese labels into
+    // one-character-per-line wrapping — give date columns an explicit
+    // narrow width so the remaining space goes to text columns instead.
+    Array.from(headerRow.children).forEach(th => {
+      const text = th.textContent?.trim() || '';
+      if (DATE_HEADER_PATTERN.test(text)) {
+        (th as HTMLElement).style.width = '48px';
+      }
+    });
+  }
 
   return clone.innerHTML;
 }
@@ -384,8 +417,8 @@ export function exportToPDF(elementId: string, filename: string) {
           }
 
           @media print {
-            @page { size: A4; margin: 10mm; }
-            body { margin: 0; padding: 10mm; }
+            @page { size: A4 landscape; margin: 8mm; }
+            body { margin: 0; padding: 8mm; }
             button, [role="button"], .flex.gap-2, input, select, textarea {
               display: none !important;
             }
