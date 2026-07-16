@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Calendar, Edit2, Trash2, X } from 'lucide-react';
 import { supabase, Event, EventDate } from '../lib/supabase';
+import { parseLocalDate } from '../lib/dateUtils';
 
 type EventWithDates = Event & {
   event_dates: EventDate[];
@@ -222,7 +223,7 @@ export function EventManagement() {
                   className="flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
                 >
                   <Calendar className="w-4 h-4" />
-                  {new Date(date.event_date).toLocaleDateString('zh-TW', {
+                  {parseLocalDate(date.event_date).toLocaleDateString('zh-TW', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
@@ -298,7 +299,7 @@ export function EventManagement() {
                         >
                           <Calendar className="w-3 h-3" />
                           <span>
-                            {new Date(date).toLocaleDateString('zh-TW', {
+                            {parseLocalDate(date).toLocaleDateString('zh-TW', {
                               year: 'numeric',
                               month: 'long',
                               day: 'numeric'

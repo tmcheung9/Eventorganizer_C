@@ -3,6 +3,7 @@ import { Filter, Calendar, UserPlus, Download, FileText, Plus, Minus, ChevronLef
 import { supabase, Contact, Event, EventDate, Registration, Attendance } from '../lib/supabase';
 import { loadAllData, extractFilterOptions, RegistrationWithDetails } from '../lib/dataService';
 import { exportToCSV, exportToPDF } from '../lib/exportUtils';
+import { parseLocalDate } from '../lib/dateUtils';
 
 type GroupedAttendance = {
   contact: Contact;
@@ -210,11 +211,11 @@ export function AttendanceTracking() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const futureDates = data.eventDates.filter(d => new Date(d.event_date) >= today);
+        const futureDates = data.eventDates.filter(d => parseLocalDate(d.event_date) >= today);
         const datesToConsider = futureDates.length > 0 ? futureDates : data.eventDates;
 
         const sortedByLatest = [...datesToConsider].sort((a, b) => {
-          return new Date(b.event_date).getTime() - new Date(a.event_date).getTime();
+          return parseLocalDate(b.event_date).getTime() - parseLocalDate(a.event_date).getTime();
         });
         const latestDate = sortedByLatest[0];
         if (latestDate) {
@@ -859,7 +860,7 @@ export function AttendanceTracking() {
   const selectedEvent = filterEvent !== 'all' ? events.find(e => e.id === filterEvent) : null;
   const allSelectedEventDates = selectedEvent
     ? eventDates.filter(d => d.event_id === selectedEvent.id).sort((a, b) =>
-        new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+        parseLocalDate(a.event_date).getTime() - parseLocalDate(b.event_date).getTime()
       )
     : [];
 
@@ -937,7 +938,7 @@ export function AttendanceTracking() {
 
   function handleExportAttendeeCSV() {
     const exportData: any[] = [];
-    const dateColumns = selectedEventDatesData.map(date => new Date(date.event_date).toLocaleDateString('zh-TW'));
+    const dateColumns = selectedEventDatesData.map(date => parseLocalDate(date.event_date).toLocaleDateString('zh-TW'));
 
     attendeeGroups.forEach(group => {
       exportData.push({
@@ -957,7 +958,7 @@ export function AttendanceTracking() {
 
         selectedEventDatesData.forEach(date => {
           const dateData = attendanceGroup?.dates.get(date.id);
-          row[new Date(date.event_date).toLocaleDateString('zh-TW')] = dateData?.attendance?.attended ? '✓' : '';
+          row[parseLocalDate(date.event_date).toLocaleDateString('zh-TW')] = dateData?.attendance?.attended ? '✓' : '';
         });
 
         exportData.push(row);
@@ -969,7 +970,7 @@ export function AttendanceTracking() {
 
   function handleExportHelperCSV() {
     const exportData: any[] = [];
-    const dateColumns = selectedEventDatesData.map(date => new Date(date.event_date).toLocaleDateString('zh-TW'));
+    const dateColumns = selectedEventDatesData.map(date => parseLocalDate(date.event_date).toLocaleDateString('zh-TW'));
 
     helperGroups.forEach(group => {
       exportData.push({
@@ -990,7 +991,7 @@ export function AttendanceTracking() {
 
         selectedEventDatesData.forEach(date => {
           const dateData = helperGroup?.dates.get(date.id);
-          row[new Date(date.event_date).toLocaleDateString('zh-TW')] = dateData?.attendance?.attended ? '✓' : '';
+          row[parseLocalDate(date.event_date).toLocaleDateString('zh-TW')] = dateData?.attendance?.attended ? '✓' : '';
         });
 
         exportData.push(row);
@@ -1063,7 +1064,7 @@ export function AttendanceTracking() {
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <span className="text-sm">
-                  {new Date(date.event_date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}
+                  {parseLocalDate(date.event_date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}
                 </span>
               </label>
             ))}
@@ -1280,7 +1281,7 @@ export function AttendanceTracking() {
                       )}
                       {selectedEventDatesData.map(date => (
                         <th key={date.id} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          <span className="text-sm">{new Date(date.event_date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}</span>
+                          <span className="text-sm">{parseLocalDate(date.event_date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}</span>
                         </th>
                       ))}
                     </tr>
@@ -1651,7 +1652,7 @@ export function AttendanceTracking() {
                       )}
                       {selectedEventDatesData.map(date => (
                         <th key={date.id} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          <span className="text-sm">{new Date(date.event_date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}</span>
+                          <span className="text-sm">{parseLocalDate(date.event_date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}</span>
                         </th>
                       ))}
                     </tr>
@@ -1990,7 +1991,7 @@ export function AttendanceTracking() {
                   <option value="">請選擇...</option>
                   {selectedEventDatesData.map(date => (
                     <option key={date.id} value={date.id}>
-                      {new Date(date.event_date).toLocaleDateString('zh-TW')}
+                      {parseLocalDate(date.event_date).toLocaleDateString('zh-TW')}
                     </option>
                   ))}
                 </select>

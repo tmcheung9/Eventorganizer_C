@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Calendar, Filter, Download, FileText } from 'lucide-react';
 import { supabase, Contact, Event, EventDate, Registration, Attendance } from '../lib/supabase';
 import { exportToCSV, exportToPDFStructured } from '../lib/exportUtils';
+import { parseLocalDate } from '../lib/dateUtils';
 
 type ContactStats = {
   contact: Contact;
@@ -69,7 +70,7 @@ export function Statistics() {
       }
 
       const filteredDates = (datesData || []).filter(date => {
-        const dateTime = new Date(date.event_date);
+        const dateTime = parseLocalDate(date.event_date);
         if (periodFilter !== 'all' && dateTime < startDate) return false;
         if (eventFilter !== 'all' && date.event_id !== eventFilter) return false;
         return true;
@@ -352,7 +353,7 @@ export function Statistics() {
                                             : 'bg-red-100 text-red-800 border border-red-300'
                                         }`}
                                       >
-                                        {new Date(dateInfo.date.event_date).toLocaleDateString('zh-TW')}
+                                        {parseLocalDate(dateInfo.date.event_date).toLocaleDateString('zh-TW')}
                                         <span className="ml-2">
                                           {dateInfo.attended ? '✓' : '✗'}
                                         </span>

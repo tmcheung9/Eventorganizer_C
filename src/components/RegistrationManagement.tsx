@@ -3,6 +3,7 @@ import { Plus, Save, X, Filter, Trash2, Edit2, Download, FileText, GripVertical,
 import { supabase, Contact, Event, EventDate, Registration } from '../lib/supabase';
 import { loadAllData, extractFilterOptions } from '../lib/dataService';
 import { exportToCSV, exportToPDF } from '../lib/exportUtils';
+import { parseLocalDate } from '../lib/dateUtils';
 
 type EditableRow = {
   id?: string;
@@ -79,11 +80,11 @@ export function RegistrationManagement() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const futureDates = data.eventDates.filter(d => new Date(d.event_date) >= today);
+        const futureDates = data.eventDates.filter(d => parseLocalDate(d.event_date) >= today);
         const datesToConsider = futureDates.length > 0 ? futureDates : data.eventDates;
 
         const sortedByLatest = [...datesToConsider].sort((a, b) => {
-          return new Date(b.event_date).getTime() - new Date(a.event_date).getTime();
+          return parseLocalDate(b.event_date).getTime() - parseLocalDate(a.event_date).getTime();
         });
         const latestDate = sortedByLatest[0];
         if (latestDate) {
@@ -511,7 +512,7 @@ export function RegistrationManagement() {
   const selectedEvent = filterEvent !== 'all' ? events.find(e => e.id === filterEvent) : null;
   const allSelectedEventDates = selectedEvent
     ? eventDates.filter(d => d.event_id === selectedEvent.id).sort((a, b) =>
-        new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+        parseLocalDate(a.event_date).getTime() - parseLocalDate(b.event_date).getTime()
       )
     : [];
 
@@ -564,7 +565,7 @@ export function RegistrationManagement() {
       '崗位': row.position || '-',
       ...Object.fromEntries(
         selectedEventDatesData.map(date => [
-          new Date(date.event_date).toLocaleDateString('zh-TW'),
+          parseLocalDate(date.event_date).toLocaleDateString('zh-TW'),
           row.registrations.has(date.id) ? '✓' : ''
         ])
       )
@@ -656,7 +657,7 @@ export function RegistrationManagement() {
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <span className="text-sm">
-                  {new Date(date.event_date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}
+                  {parseLocalDate(date.event_date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}
                 </span>
               </label>
             ))}
@@ -787,7 +788,7 @@ export function RegistrationManagement() {
                 )}
                 {selectedEventDatesData.map(date => (
                   <th key={date.id} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[64px]">
-                    <span className="text-sm">{new Date(date.event_date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}</span>
+                    <span className="text-sm">{parseLocalDate(date.event_date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}</span>
                   </th>
                 ))}
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider sticky right-0 bg-gray-50 z-10">

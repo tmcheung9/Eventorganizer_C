@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Users, CheckCircle, UserCheck, Filter, ChevronDown, ChevronRight, Heart, ListChecks, Download, FileText } from 'lucide-react';
 import { supabase, Event, EventDate } from '../lib/supabase';
 import { exportToCSV, exportToPDFStructured } from '../lib/exportUtils';
+import { parseLocalDate } from '../lib/dateUtils';
 
 type FollowUpBreakdown = {
   '待跟進-需要個人關懷': number;
@@ -94,7 +95,7 @@ export function SummaryDashboard() {
 
         const totalAttended = attendedAttendees.length + attendedHelpers.length;
 
-        const dateString = new Date(eventDate.event_date).toLocaleDateString('en-US', {
+        const dateString = parseLocalDate(eventDate.event_date).toLocaleDateString('en-US', {
           month: 'numeric',
           day: 'numeric'
         });
@@ -345,7 +346,7 @@ export function SummaryDashboard() {
 
       return {
         '活動名稱': summary.event.name,
-        '日期': new Date(summary.eventDate.event_date).toLocaleDateString('zh-TW'),
+        '日期': parseLocalDate(summary.eventDate.event_date).toLocaleDateString('zh-TW'),
         '參加者登記': summary.attendees,
         '參加者出席': summary.attended,
         '參加者出席率': `${attendanceRate}%`,
@@ -398,7 +399,7 @@ export function SummaryDashboard() {
 
       return {
         '活動名稱': summary.event.name,
-        '日期': new Date(summary.eventDate.event_date).toLocaleDateString('zh-TW'),
+        '日期': parseLocalDate(summary.eventDate.event_date).toLocaleDateString('zh-TW'),
         '參加者登記': summary.attendees,
         '參加者出席': summary.attended,
         '參加者出席率': `${attendanceRate}%`,
@@ -472,7 +473,7 @@ export function SummaryDashboard() {
             <option value="all">所有日期</option>
             {availableEventDates.map(date => (
               <option key={date.id} value={date.id}>
-                {new Date(date.event_date).toLocaleDateString('zh-TW')}
+                {parseLocalDate(date.event_date).toLocaleDateString('zh-TW')}
               </option>
             ))}
           </select>
@@ -651,7 +652,7 @@ export function SummaryDashboard() {
                         {summary.event.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {new Date(summary.eventDate.event_date).toLocaleDateString('zh-TW')}
+                        {parseLocalDate(summary.eventDate.event_date).toLocaleDateString('zh-TW')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-600">
                         {summary.attendees}
@@ -725,7 +726,7 @@ export function SummaryDashboard() {
                                 <div className="text-sm text-gray-600">
                                   於此活動決志
                                   <div className="text-xs text-gray-500 mt-1">
-                                    ({new Date(summary.eventDate.event_date).toLocaleDateString('en-US', {
+                                    ({parseLocalDate(summary.eventDate.event_date).toLocaleDateString('en-US', {
                                       month: 'numeric',
                                       day: 'numeric'
                                     })})
