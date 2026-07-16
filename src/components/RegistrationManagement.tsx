@@ -786,7 +786,7 @@ export function RegistrationManagement() {
                   </th>
                 )}
                 {selectedEventDatesData.map(date => (
-                  <th key={date.id} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
+                  <th key={date.id} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[64px]">
                     <span className="text-sm">{new Date(date.event_date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}</span>
                   </th>
                 ))}
@@ -961,7 +961,7 @@ export function RegistrationManagement() {
                     const regData = row.registrations.get(date.id);
                     const hasReg = !!regData;
                     return (
-                      <td key={date.id} className="px-4 py-3 text-center">
+                      <td key={date.id} className="px-2 py-3 text-center">
                         {!row.isNew ? (
                           <input
                             type="checkbox"

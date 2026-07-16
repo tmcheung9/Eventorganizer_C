@@ -187,7 +187,7 @@ export function Statistics() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-[1600px] mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">個人出席統計</h1>
         <div className="flex gap-2">

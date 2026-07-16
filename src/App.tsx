@@ -127,7 +127,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-3">
             <div className="bg-blue-600 p-3 rounded-lg">
               <Church className="w-8 h-8 text-white" />
@@ -140,7 +140,7 @@ function App() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1600px] mx-auto">
         <TabNavigation
           tabs={tabs}
           activeTab={activeTab}
@@ -158,7 +158,7 @@ function App() {
         </main>
       </div>
 
-      <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-500 text-sm">
+      <footer className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-500 text-sm">
         <p>教會活動籌辦系統 © 2025</p>
         <p className="mt-1 text-xs text-gray-400">Version 1.0.0</p>
       </footer>
