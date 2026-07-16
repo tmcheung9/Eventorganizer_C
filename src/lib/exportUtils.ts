@@ -211,6 +211,42 @@ export function exportToPDFStructured(data: any[], filename: string) {
   }, 500);
 }
 
+function buildPrintableTableHtml(element: HTMLElement): string {
+  const clone = element.cloneNode(true) as HTMLElement;
+
+  // Header cells carry live filter inputs/selects/sort buttons for on-screen
+  // use only. Without the app's stylesheet loaded in the print window, those
+  // controls render at their native (much wider) size, which was pushing
+  // later columns off the printed page. Reduce each header to its plain
+  // label text instead of the interactive control.
+  clone.querySelectorAll('thead th').forEach(th => {
+    const label = th.querySelector('span, div > span') || th.querySelector('div');
+    const text = label ? label.textContent?.trim() : th.textContent?.trim();
+    th.textContent = text || '';
+  });
+
+  // Checkbox inputs in the body represent real data (e.g. registered /
+  // attended on a given date) — keep the information but swap the native
+  // control for plain text so it always renders consistently in print.
+  clone.querySelectorAll('input[type="checkbox"]').forEach(input => {
+    const checked = (input as HTMLInputElement).checked;
+    const mark = document.createElement('span');
+    mark.textContent = checked ? '✓' : '';
+    input.replaceWith(mark);
+  });
+
+  // Any other stray form control (e.g. a row mid-edit) — print its current
+  // value as plain text rather than an interactive element.
+  clone.querySelectorAll('input, select, textarea').forEach(el => {
+    const value = (el as HTMLInputElement | HTMLSelectElement).value ?? '';
+    el.replaceWith(document.createTextNode(value));
+  });
+
+  clone.querySelectorAll('button, [role="button"]').forEach(el => el.remove());
+
+  return clone.innerHTML;
+}
+
 export function exportToPDF(elementId: string, filename: string) {
   const element = document.getElementById(elementId);
   if (!element) {
@@ -315,8 +351,16 @@ export function exportToPDF(elementId: string, filename: string) {
             font-family: ${fontStack} !important;
           }
 
-          button, [role="button"], .flex.gap-2 {
+          button, [role="button"], .flex.gap-2, input, select, textarea {
             display: none !important;
+          }
+
+          table {
+            table-layout: fixed;
+          }
+
+          th, td {
+            overflow-wrap: break-word;
           }
 
           .space-y-8 {
@@ -342,7 +386,7 @@ export function exportToPDF(elementId: string, filename: string) {
           @media print {
             @page { size: A4; margin: 10mm; }
             body { margin: 0; padding: 10mm; }
-            button, [role="button"], .flex.gap-2 {
+            button, [role="button"], .flex.gap-2, input, select, textarea {
               display: none !important;
             }
             .space-y-8 > div:first-child {
@@ -352,7 +396,7 @@ export function exportToPDF(elementId: string, filename: string) {
         </style>
       </head>
       <body>
-        ${element.innerHTML}
+        ${buildPrintableTableHtml(element)}
       </body>
     </html>
   `;
